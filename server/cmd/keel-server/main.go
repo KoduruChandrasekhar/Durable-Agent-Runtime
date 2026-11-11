@@ -77,7 +77,7 @@ func run(logger *slog.Logger) error {
 	if err != nil {
 		return err
 	}
-	defer shutdownTracing(context.Background())
+	defer func() { _ = shutdownTracing(context.Background()) }()
 
 	pol, err := policy.NewWatcher(env("KEEL_POLICY_FILE", "deploy/policy.yaml"))
 	if err != nil {

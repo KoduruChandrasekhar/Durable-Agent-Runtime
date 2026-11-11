@@ -36,7 +36,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	shutdown, _ := otelx.Setup(ctx, "keel-sandbox")
-	defer shutdown(context.Background())
+	defer func() { _ = shutdown(context.Background()) }()
 	pool, _ := strconv.Atoi(env("KEEL_SANDBOX_POOL", "3"))
 	svc := sandbox.New(sandbox.Config{Image: env("KEEL_SANDBOX_IMAGE", "python:3.12-alpine"),
 		Runtime: os.Getenv("KEEL_SANDBOX_RUNTIME"), PoolSize: pool}, logger)
@@ -58,7 +58,7 @@ func main() {
 		}
 		_ = json.NewEncoder(w).Encode(res)
 	})
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte(`{"status":"ok"}`)) })
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(`{"status":"ok"}`)) })
 	mux.Handle("GET /metrics", promhttp.Handler())
 	srv := &http.Server{Addr: env("KEEL_SANDBOX_ADDR", ":8095"), Handler: otelhttp.NewHandler(mux, "keel-sandbox"),
 		ReadHeaderTimeout: 10 * time.Second}

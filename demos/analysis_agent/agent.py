@@ -5,11 +5,12 @@ from __future__ import annotations
 
 import contextvars
 
+from pydantic import BaseModel
+
 from keel import Context, workflow
 from keel.llm import system, user
 from keel.sandbox import register_sandbox_tool
 from keel.tools import ToolRegistry, tool_result_messages
-from pydantic import BaseModel
 
 TOOLS = ToolRegistry()
 # The dataset travels with the workflow's context into the tool's step.

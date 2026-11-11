@@ -85,7 +85,8 @@ def _check_required(name: str, schema: dict, args: dict) -> None:
         if req not in args:
             raise ToolValidationError(name, [{"loc": req, "msg": "field required"}])
     props = schema.get("properties") or {}
-    types = {"string": str, "integer": int, "number": (int, float), "boolean": bool, "object": dict, "array": list}
+    types: dict[str, type | tuple[type, ...]] = {"string": str, "integer": int, "number": (int, float),
+                                                 "boolean": bool, "object": dict, "array": list}
     for k, v in args.items():
         if schema.get("additionalProperties") is False and k not in props:
             raise ToolValidationError(name, [{"loc": k, "msg": "unexpected field"}])

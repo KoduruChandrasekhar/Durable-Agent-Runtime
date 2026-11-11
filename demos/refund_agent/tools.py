@@ -9,9 +9,10 @@
 
 from __future__ import annotations
 
+from pydantic import BaseModel
+
 from keel import tool
 from keel.tools import ToolRegistry
-from pydantic import BaseModel
 
 from .systems import systems
 

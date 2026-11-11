@@ -12,6 +12,7 @@ import json
 import time
 
 import psycopg
+
 from keel.client import KeelClient
 
 from .common import API, DSN, containers, docker

@@ -26,9 +26,9 @@ from pathlib import Path
 from typing import Any
 
 import psycopg
-from keel.client import KeelClient
 
 from chaos.common import API, DSN, containers, docker, hostname
+from keel.client import KeelClient
 
 OUT = Path("bench/results")
 

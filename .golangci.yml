@@ -1,0 +1,5 @@
+version: "2"
+linters:
+  exclusions:
+    # Unchecked Close/Write/Fprintf on responses and deferred cleanup are intentional.
+    presets: [std-error-handling, common-false-positives]

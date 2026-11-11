@@ -225,7 +225,9 @@ class LocalServer:
 
     def fork(self, run_id: str, from_seq: int = 0, overrides: dict | None = None, dry_run: bool = True) -> str:
         src = self.runs[run_id]
-        copied, tainted, facts, max_epoch = [], False, {}, 0
+        copied: list[Event] = []
+        facts: dict = {}
+        tainted, max_epoch = False, 0
         for e in self.events[run_id]:
             if from_seq and e.seq > from_seq:
                 break

@@ -14,9 +14,9 @@ import json
 import time
 
 import psycopg
-from keel.client import KeelClient
 
 from demos.refund_agent.fixtures import generate
+from keel.client import KeelClient
 
 from .common import API, DSN, MOCKS, containers, docker, hostname, reset_mocks
 

@@ -14,6 +14,7 @@ import uuid
 from typing import Any
 
 import httpx
+
 from keel.telemetry import inject_headers
 
 

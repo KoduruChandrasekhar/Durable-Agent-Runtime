@@ -97,7 +97,7 @@ func Parse(data []byte) (*Config, error) {
 	}
 	for name, r := range c.Routes {
 		if !strings.HasPrefix(name, "router:") {
-			return nil, fmt.Errorf("route %q must start with router:", name)
+			return nil, fmt.Errorf("route %q must start with %q", name, "router:")
 		}
 		for _, m := range append(append([]string{}, r.Chain...), r.EscalateTo) {
 			if m != "" && c.Models[m] == nil {

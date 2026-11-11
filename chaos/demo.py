@@ -19,9 +19,9 @@ import time
 from collections import Counter
 
 import httpx
-from keel.client import KeelClient
 
 from demos.refund_agent.fixtures import generate
+from keel.client import KeelClient
 
 from .common import API, MOCKS, Killer, configure_chaos, reset_mocks
 from .invariants import check, print_report

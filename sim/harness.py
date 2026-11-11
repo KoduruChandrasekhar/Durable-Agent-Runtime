@@ -26,6 +26,10 @@ import sys
 from dataclasses import dataclass, field
 from typing import Any
 
+from demos.refund_agent import agent as refund
+from demos.refund_agent import fixtures as fx
+from demos.refund_agent import systems as refund_systems
+from demos.refund_agent import tools as refund_tools
 from keel import Context, RetryPolicy, tool, workflow
 from keel.errors import WorkerCrash
 from keel.executor import Services
@@ -34,11 +38,6 @@ from keel.protocol import TransientBackendError
 from keel.testing import LocalServer, LocalWorker, check_log_invariants, quiesce
 from keel.tools import ToolRegistry
 from keel.workflow import WorkflowRegistry
-
-from demos.refund_agent import agent as refund
-from demos.refund_agent import fixtures as fx
-from demos.refund_agent import systems as refund_systems
-from demos.refund_agent import tools as refund_tools
 
 POLICY_PATH = "deploy/policy.yaml"
 

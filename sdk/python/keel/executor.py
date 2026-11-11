@@ -520,6 +520,7 @@ class RunExecutor:
                         "expires_at_ms": expires, "on_expiry": d.on_expiry, "summary": summary})])
                     self._requested_approvals.add(approval_id)
                 self.wait_on([Wait("approval", approval_id)])
+            assert res is not None  # wait_on raised otherwise
             decision = res.get("decision")
             if decision == "expired":
                 decision = {"reject": "rejected", "approve": "approved", "escalate": "escalate"}.get(

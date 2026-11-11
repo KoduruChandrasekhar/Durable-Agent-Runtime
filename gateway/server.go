@@ -200,7 +200,7 @@ func (g *Gateway) Router() http.Handler {
 		g.breakers.Range(func(k, v any) bool { v.(*breaker.Breaker).Success(); return true })
 		w.WriteHeader(204)
 	})
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte(`{"status":"ok"}`)) })
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(`{"status":"ok"}`)) })
 	mux.Handle("GET /metrics", promhttp.Handler())
 	return otelhttp.NewHandler(mux, "keel-gateway")
 }

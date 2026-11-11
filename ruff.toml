@@ -1,0 +1,9 @@
+line-length = 110
+extend-exclude = ["sdk/python/keel/v1", "ui"]
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501", "B008", "UP007", "UP045"]
+
+[lint.isort]
+known-first-party = ["keel", "demos", "sim", "evals", "chaos", "bench"]

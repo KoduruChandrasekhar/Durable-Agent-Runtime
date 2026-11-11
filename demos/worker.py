@@ -13,10 +13,9 @@ import json
 import logging
 import os
 
+from bench import workflows as bench_workflows
 from keel.tools import ToolRegistry
 from keel.worker import Worker
-
-from bench import workflows as bench_workflows
 
 from .analysis_agent import agent as analysis
 from .refund_agent import agent as refund

@@ -18,11 +18,12 @@ import os
 from typing import Any
 
 import httpx
+from pydantic import BaseModel, Field
+
 from keel import Context, StepError, tool, workflow
 from keel.errors import LLMError
 from keel.llm import system, untrusted, user
 from keel.tools import ToolRegistry
-from pydantic import BaseModel, Field
 
 TOOLS = ToolRegistry()
 _http: httpx.AsyncClient | None = None

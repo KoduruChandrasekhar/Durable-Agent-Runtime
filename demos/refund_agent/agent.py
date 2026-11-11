@@ -25,11 +25,12 @@ import datetime as dt
 import json
 from typing import Literal
 
+from pydantic import BaseModel, Field
+
 from keel import Context, PolicyDenied, StepError, workflow
 from keel.errors import ExtractionError
 from keel.llm import Message, system, trusted, untrusted, user
 from keel.tools import tool_result_messages
-from pydantic import BaseModel, Field
 
 from .tools import add_crm_note, get_order, get_refund_status, issue_refund, send_email
 

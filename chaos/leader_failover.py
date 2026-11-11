@@ -15,6 +15,7 @@ import time
 
 import httpx
 import psycopg
+
 from keel.client import KeelClient
 
 from .common import DSN, containers, docker

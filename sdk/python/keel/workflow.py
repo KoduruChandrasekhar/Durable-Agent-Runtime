@@ -13,7 +13,7 @@ import datetime as _dt
 import inspect
 import logging
 import uuid as _uuid
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, TypeVar, get_type_hints
 
@@ -208,7 +208,7 @@ class Context:
                                  hash_input={"args": args, "kwargs": kwargs}, record_input={"args": args, "kwargs": kwargs},
                                  ret_type=ret, timeout=timeout, batch=batch)
 
-    def llm(self, messages: list[Message | dict], model: str | None = None, tools: list[Any] | None = None, *,
+    def llm(self, messages: Sequence[Message | dict], model: str | None = None, tools: list[Any] | None = None, *,
             key: Any = None, temperature: float = 0.0, max_tokens: int = 1024,
             response_format: dict | None = None, quarantined: bool = False, stream: bool = False,
             retry: RetryPolicy | None = None, cacheable: bool | None = None) -> Awaitable[LLMReply]:
@@ -260,7 +260,7 @@ class Context:
     def tools(self, calls: list[ToolCall]) -> Awaitable[list[ToolResult]]:
         """Run an LLM's tool calls concurrently; errors (validation, denial,
         rejection, failure) come back as ToolResult for the model to read."""
-        targets = []
+        targets: list[tuple] = []
         for c in calls:
             try:
                 spec, a, sid, order = self._tool_target(c, None, None)

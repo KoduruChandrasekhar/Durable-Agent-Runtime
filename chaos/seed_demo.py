@@ -10,9 +10,9 @@ import datetime as dt
 import time
 
 import httpx
-from keel.client import KeelClient
 
 from demos.refund_agent.fixtures import generate
+from keel.client import KeelClient
 
 
 async def main() -> None:

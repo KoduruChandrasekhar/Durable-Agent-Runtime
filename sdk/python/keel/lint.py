@@ -62,6 +62,15 @@ class _Visitor(ast.NodeVisitor):
         self.findings: list[Finding] = []
         self.in_step_lambda = 0
 
+    def _nested(self, node: ast.AST) -> None:
+        # Nested functions are passed to ctx.step as step bodies, like lambdas.
+        self.in_step_lambda += 1
+        self.generic_visit(node)
+        self.in_step_lambda -= 1
+
+    visit_FunctionDef = _nested  # type: ignore[assignment]
+    visit_AsyncFunctionDef = _nested  # type: ignore[assignment]
+
     def visit_Lambda(self, node: ast.Lambda) -> None:
         # Lambdas passed to ctx.step run as steps; their bodies may be nondeterministic.
         self.in_step_lambda += 1

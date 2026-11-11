@@ -137,9 +137,10 @@ class Worker:
         if self.active:
             done, pending = await asyncio.wait([t for t, _ in self.active.values()], timeout=self.shutdown_grace_s)
             for t in pending:
-                ex = next((e for tt, e in self.active.values() if tt is t), None)
+                found = next((e for tt, e in self.active.values() if tt is t), None)
                 t.cancel()
-                if ex is not None and not ex.dead:
+                if found is not None and not found.dead:
+                    ex = found
                     ex.mark_dead()
                     try:
                         await self.backend.suspend(ex.task.run_id, ex.epoch, [], 0, "handback")

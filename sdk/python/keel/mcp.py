@@ -67,8 +67,10 @@ class MCPToolset:
                 params = StdioServerParameters(command=cfg.command, args=cfg.args, env=cfg.env)
                 read, write = await self.stack.enter_async_context(stdio_client(params))
             elif cfg.url:
-                from mcp.client.streamable_http import streamablehttp_client
-                read, write, _ = await self.stack.enter_async_context(streamablehttp_client(cfg.url))
+                from mcp.client import streamable_http
+                client = (getattr(streamable_http, "streamable_http_client", None)  # mcp >= 2
+                          or streamable_http.streamablehttp_client)  # type: ignore[attr-defined]
+                read, write, *_ = await self.stack.enter_async_context(client(cfg.url))
             else:
                 raise ValueError(f"MCP server {cfg.name}: need command or url")
             session = await self.stack.enter_async_context(ClientSession(read, write))

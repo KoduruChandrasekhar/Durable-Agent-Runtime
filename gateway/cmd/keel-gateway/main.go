@@ -41,7 +41,7 @@ func main() {
 		os.Exit(1)
 	}
 	shutdown, _ := otelx.Setup(ctx, "keel-gateway")
-	defer shutdown(context.Background())
+	defer func() { _ = shutdown(context.Background()) }()
 
 	ps, limits := gateway.BuildProviders(cfg)
 	if url := os.Getenv("KEEL_REDIS_URL"); url != "" {

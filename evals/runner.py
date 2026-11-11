@@ -27,15 +27,15 @@ import zlib
 from pathlib import Path
 
 import yaml
-from keel.llm import ChatRequest, LLMReply, ToolCall, Usage
-from keel.testing import LocalEnv
-from keel.tools import ToolRegistry
 
 from demos.mocks import brain
 from demos.refund_agent import agent as refund
 from demos.refund_agent import systems as refund_systems
 from demos.refund_agent import tools as refund_tools
 from demos.refund_agent.fixtures import NOW
+from keel.llm import ChatRequest, LLMReply, ToolCall, Usage
+from keel.testing import LocalEnv
+from keel.tools import ToolRegistry
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = (ROOT / "deploy" / "policy.yaml").read_text(encoding="utf-8")
