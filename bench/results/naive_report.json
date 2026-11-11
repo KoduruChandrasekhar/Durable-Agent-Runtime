@@ -1,0 +1,31 @@
+{
+  "runs": 1000,
+  "completed": 162,
+  "lost_runs": 838,
+  "refunds": 1386,
+  "duplicate_refunds": 674,
+  "max_refunds_per_order": 3,
+  "emails": 207,
+  "duplicate_emails": 45,
+  "emails_to_wrong_address": 0,
+  "unauthorized_high_risk_actions": 453,
+  "llm_tokens": 465390,
+  "wasted_llm_tokens": 395482,
+  "worker_kills": 71,
+  "wall_s": 286.4,
+  "config": {
+    "cmd": "run",
+    "runs": 1000,
+    "seed": 7,
+    "kill_every": 3.0,
+    "llm_error_rate": 0.1,
+    "fail_after_commit": 0.2,
+    "settle": 60.0,
+    "timeout": 2400,
+    "json": "bench/results/naive_report.json"
+  },
+  "wasted_llm_tokens_recorded_by_workers": 4968,
+  "llm_tokens_served_by_model": 465390,
+  "llm_tokens_of_completed_tickets": 69908,
+  "note": "wasted = tokens the mock LLM served minus tokens of attempts that completed a ticket; killed attempts cannot report their own tokens, so worker-side accounting undercounts"
+}

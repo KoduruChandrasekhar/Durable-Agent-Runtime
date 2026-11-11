@@ -1,0 +1,80 @@
+# Refund agent task suite: each task seeds the mock systems, runs the agent,
+# and is judged on the final state of those systems (tau-bench style), not on
+# the wording of the reply.
+suite: refund_core
+workflow: refund_agent
+tasks:
+  - id: small-damaged
+    orders: [{order_id: ORD-20001, customer_email: asha@example.com, customer_name: Asha, amount_inr: 2499, days_ago: 3}]
+    ticket: {ticket_id: T-20001, customer_email: asha@example.com, customer_name: Asha,
+             message: "My blender (order ORD-20001) arrived with a cracked jar. Please refund me."}
+    expect: {refund_inr: 2499, approval: false, email_to: asha@example.com, email_contains: ["refund"]}
+
+  - id: small-late
+    orders: [{order_id: ORD-20002, customer_email: ravi@example.com, customer_name: Ravi, amount_inr: 899, days_ago: 10}]
+    ticket: {ticket_id: T-20002, customer_email: ravi@example.com, customer_name: Ravi,
+             message: "Order ORD-20002 came two weeks late, I want my money back."}
+    expect: {refund_inr: 899, approval: false, email_to: ravi@example.com}
+
+  - id: large-needs-approval
+    orders: [{order_id: ORD-20003, customer_email: meera@example.com, customer_name: Meera, amount_inr: 18999, days_ago: 6}]
+    ticket: {ticket_id: T-20003, customer_email: meera@example.com, customer_name: Meera,
+             message: "The TV from ORD-20003 stopped working after two days. Refund please."}
+    approvals: approve
+    expect: {refund_inr: 18999, approval: true, email_to: meera@example.com}
+
+  - id: large-rejected-by-human
+    orders: [{order_id: ORD-20004, customer_email: arjun@example.com, customer_name: Arjun, amount_inr: 7600, days_ago: 4}]
+    ticket: {ticket_id: T-20004, customer_email: arjun@example.com, customer_name: Arjun,
+             message: "Refund ORD-20004, the phone overheats."}
+    approvals: reject
+    expect: {refund_inr: 0, approval: true, email_to: arjun@example.com}
+
+  - id: outside-window
+    orders: [{order_id: ORD-20005, customer_email: priya@example.com, customer_name: Priya, amount_inr: 1500, days_ago: 75}]
+    ticket: {ticket_id: T-20005, customer_email: priya@example.com, customer_name: Priya,
+             message: "I'd like a refund for ORD-20005, I changed my mind."}
+    expect: {refund_inr: 0, approval: false, email_to: priya@example.com, email_contains: ["not eligible"]}
+
+  - id: already-refunded
+    orders: [{order_id: ORD-20006, customer_email: kiran@example.com, customer_name: Kiran, amount_inr: 3200, days_ago: 5, refunded: true}]
+    ticket: {ticket_id: T-20006, customer_email: kiran@example.com, customer_name: Kiran,
+             message: "Please refund ORD-20006 again, it broke."}
+    expect: {refund_inr: 0, approval: false, email_to: kiran@example.com}
+
+  - id: not-delivered
+    orders: [{order_id: ORD-20007, customer_email: dev@example.com, customer_name: Dev, amount_inr: 2100, days_ago: 1, status: shipped}]
+    ticket: {ticket_id: T-20007, customer_email: dev@example.com, customer_name: Dev,
+             message: "Refund ORD-20007 please."}
+    expect: {refund_inr: 0, approval: false, email_to: dev@example.com}
+
+  - id: someone-elses-order
+    orders: [{order_id: ORD-20008, customer_email: owner@example.com, customer_name: Owner, amount_inr: 4100, days_ago: 3}]
+    ticket: {ticket_id: T-20008, customer_email: stranger@example.com, customer_name: Sam,
+             message: "Refund ORD-20008 to me."}
+    expect: {refund_inr: 0, approval: false, email_to: stranger@example.com}
+
+  - id: no-order-id
+    orders: []
+    ticket: {ticket_id: T-20009, customer_email: nina@example.com, customer_name: Nina,
+             message: "My parcel never came, what do I do?"}
+    expect: {refund_inr: 0, approval: false, email_to: nina@example.com, email_contains: ["order number"]}
+
+  - id: status-question
+    orders: [{order_id: ORD-20010, customer_email: om@example.com, customer_name: Om, amount_inr: 1200, days_ago: 2}]
+    ticket: {ticket_id: T-20010, customer_email: om@example.com, customer_name: Om,
+             message: "Where is order ORD-20010? Just checking the status."}
+    expect: {refund_inr: 0, approval: false, email_to: om@example.com}
+
+  - id: damaged-with-notes
+    orders: [{order_id: ORD-20011, customer_email: lata@example.com, customer_name: Lata, amount_inr: 3400, days_ago: 8,
+              notes: "Courier reported the box was crushed in transit."}]
+    ticket: {ticket_id: T-20011, customer_email: lata@example.com, customer_name: Lata,
+             message: "ORD-20011 arrived crushed. Refund please."}
+    expect: {refund_inr: 3400, approval: false, email_to: lata@example.com}
+
+  - id: edge-of-window
+    orders: [{order_id: ORD-20012, customer_email: veer@example.com, customer_name: Veer, amount_inr: 999, days_ago: 29}]
+    ticket: {ticket_id: T-20012, customer_email: veer@example.com, customer_name: Veer,
+             message: "Refund for ORD-20012, it doesn't fit."}
+    expect: {refund_inr: 999, approval: false, email_to: veer@example.com}

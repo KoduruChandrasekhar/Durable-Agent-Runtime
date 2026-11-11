@@ -1,0 +1,161 @@
+# One command runs the whole system and seeds the refund demo:
+#   docker compose -f deploy/docker-compose.yml up -d --build
+# UI http://localhost:3000 · API http://localhost:8080 · Grafana http://localhost:3001 · standby API http://localhost:8082
+# Jaeger http://localhost:16686 · Prometheus http://localhost:9090
+name: keel
+
+x-python: &python
+  image: keel/python:dev
+  build: {context: .., dockerfile: deploy/docker/python.Dockerfile}
+  restart: unless-stopped
+
+x-otel: &otel
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+  KEEL_TRACE_SAMPLE: "1"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment: {POSTGRES_USER: keel, POSTGRES_PASSWORD: keel, POSTGRES_DB: keel}
+    command: ["postgres", "-c", "max_connections=500", "-c", "shared_buffers=512MB",
+              "-c", "synchronous_commit=${KEEL_SYNC_COMMIT:-on}", "-c", "wal_compression=on",
+              "-c", "track_io_timing=on", "-c", "autovacuum_naptime=10s"]
+    ports: ["55433:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: {test: ["CMD-SHELL", "pg_isready -U keel"], interval: 2s, retries: 30}
+
+  server:
+    image: keel/server:dev
+    build: {context: .., dockerfile: deploy/docker/go.Dockerfile, target: server}
+    restart: unless-stopped
+    depends_on: {postgres: {condition: service_healthy}}
+    environment:
+      <<: *otel
+      KEEL_DATABASE_URL: postgres://keel:keel@postgres:5432/keel?sslmode=disable
+      KEEL_AUTH: ${KEEL_AUTH:-disabled}
+      KEEL_API_KEYS: ${KEEL_API_KEYS:-}
+      KEEL_REPLICA_ID: server-1
+      KEEL_DB_MAX_CONNS: "80"
+    ports: ["${KEEL_API_PORT:-8080}:8080", "${KEEL_GRPC_PORT:-7233}:7233"]
+    volumes: [blobs:/data/blobs]
+
+  # A second replica: stateless API, and it takes over the background loops
+  # (sweeper, timers, outbox) within seconds if the leader dies.
+  server-standby:
+    image: keel/server:dev
+    restart: unless-stopped
+    depends_on: {postgres: {condition: service_healthy}}
+    environment:
+      <<: *otel
+      KEEL_DATABASE_URL: postgres://keel:keel@postgres:5432/keel?sslmode=disable
+      KEEL_AUTH: ${KEEL_AUTH:-disabled}
+      KEEL_REPLICA_ID: server-2
+      KEEL_DB_MAX_CONNS: "40"
+    ports: ["8082:8080"]
+    volumes: [blobs:/data/blobs]
+
+  gateway:
+    image: keel/gateway:dev
+    build: {context: .., dockerfile: deploy/docker/go.Dockerfile, target: gateway}
+    restart: unless-stopped
+    depends_on: {postgres: {condition: service_healthy}}
+    environment:
+      <<: *otel
+      KEEL_DATABASE_URL: postgres://keel:keel@postgres:5432/keel?sslmode=disable
+      KEEL_MOCK_LLM_URL: http://mock-llm:8000/v1
+      KEEL_MOCK_LLM_FALLBACK_URL: http://mock-llm:8000/fallback/v1
+      KEEL_LOCAL_LLM_URL: ${KEEL_LOCAL_LLM_URL:-http://mock-llm:8000/v1}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports: ["8090:8090"]
+
+  sandbox:
+    image: keel/sandbox:dev
+    build: {context: .., dockerfile: deploy/docker/go.Dockerfile, target: sandbox}
+    restart: unless-stopped
+    environment: {<<: *otel, KEEL_SANDBOX_POOL: "2"}
+    # Access to the Docker socket is effectively root on the host: use rootless
+    # Docker or a separate VM in anything but a laptop demo.
+    volumes: [/var/run/docker.sock:/var/run/docker.sock]
+    ports: ["8095:8095"]
+
+  mock-llm:
+    <<: *python
+    command: ["uvicorn", "demos.mocks.mock_llm:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "warning"]
+    environment: {KEEL_MOCK_LLM_LATENCY_MS: "${KEEL_MOCK_LLM_LATENCY_MS:-500,2000}"}
+    ports: ["8000:8000"]
+
+  mocks:
+    <<: *python
+    command: ["uvicorn", "demos.mocks.services:app", "--host", "0.0.0.0", "--port", "9000", "--log-level", "warning"]
+    environment: {<<: *otel, KEEL_MOCK: combined, KEEL_MOCK_SETTLE_S: "2"}
+    volumes: [mockdata:/data/mocks]
+    ports: ["9000:9000"]
+
+  worker:
+    <<: *python
+    command: ["python", "-m", "demos.worker"]
+    depends_on: [server, gateway, mocks]
+    environment:
+      <<: *otel
+      KEEL_SERVER: server:7233
+      KEEL_GATEWAY_URL: http://gateway:8090
+      KEEL_MOCKS_URL: http://mocks:9000
+      KEEL_SANDBOX_URL: http://sandbox:8095
+      KEEL_MAX_CONCURRENT: "${KEEL_WORKER_CONCURRENCY:-150}"
+      KEEL_METRICS_PORT: "9100"
+      KEEL_DEFAULT_MODEL: router:support
+      KEEL_LOG_LEVEL: WARNING
+      KEEL_MCP_SERVERS: '[{"name": "kb", "command": "python", "args": ["-m", "demos.mcp_server.server"]}]'
+    deploy: {replicas: "${KEEL_WORKERS:-4}"}
+    stop_grace_period: 30s
+
+  # The naive-loop baseline (same agent, no runtime), for the comparison chart.
+  naive-worker:
+    <<: *python
+    profiles: [naive]
+    command: ["python", "-m", "chaos.naive_baseline", "worker", "--concurrency", "150"]
+    environment:
+      KEEL_DATABASE_URL: postgresql://keel:keel@postgres:5432/keel
+      KEEL_MOCKS_URL: http://mocks:9000
+      KEEL_MOCK_LLM_URL: http://mock-llm:8000
+    deploy: {replicas: "${KEEL_WORKERS:-4}"}
+
+  seed:
+    <<: *python
+    restart: "no"
+    command: ["python", "-m", "chaos.seed_demo", "--mocks", "http://mocks:9000", "--api", "http://server:8080"]
+    depends_on: [mocks, server, worker]
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    environment: {COLLECTOR_OTLP_ENABLED: "true"}
+    ports: ["16686:16686", "4317:4317", "4318:4318"]
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=2d",
+              "--web.enable-lifecycle"]
+    volumes: [./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro,
+              ./observability/alerts.yml:/etc/prometheus/alerts.yml:ro]
+    ports: ["9090:9090"]
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    environment: {GF_AUTH_ANONYMOUS_ENABLED: "true", GF_AUTH_ANONYMOUS_ORG_ROLE: Admin,
+                  GF_SECURITY_ADMIN_PASSWORD: keel}
+    volumes: [./observability/grafana/provisioning:/etc/grafana/provisioning:ro,
+              ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro]
+    ports: ["3001:3000"]
+
+  ui:
+    image: keel/ui:dev
+    build: {context: ../ui, dockerfile: Dockerfile}
+    restart: unless-stopped
+    environment: {KEEL_API: http://server:8080}
+    ports: ["3000:80"]
+
+volumes:
+  pgdata: {}
+  blobs: {}
+  mockdata: {}

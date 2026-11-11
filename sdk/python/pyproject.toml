@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "keel-runtime"
+version = "0.1.0"
+description = "Durable execution for AI agents: replay, exactly-once effects, budgets, guardrails."
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+dependencies = [
+  "grpcio>=1.60",
+  "protobuf>=4.25",
+  "pydantic>=2.5",
+  "httpx>=0.25",
+  "pyyaml>=6",
+  "cel-python>=0.2",
+]
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.0"]
+otel = ["opentelemetry-sdk>=1.20", "opentelemetry-exporter-otlp-proto-grpc>=1.20"]
+metrics = ["prometheus-client>=0.17"]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "hypothesis>=6", "ruff", "mypy", "grpcio-tools>=1.60"]
+
+[project.scripts]
+keel-py = "keel.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["keel*"]
+
+[tool.ruff]
+line-length = 110
+extend-exclude = ["keel/v1"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501", "B008", "UP007", "UP045"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+exclude = ["keel/v1/"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]

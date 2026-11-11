@@ -1,0 +1,237 @@
+[
+ {
+  "a": "How long do refunds take to arrive?",
+  "b": "How many days until my refund arrives?",
+  "same": true
+ },
+ {
+  "a": "How long do refunds take to arrive?",
+  "b": "how long does a refund take to arrive",
+  "same": true
+ },
+ {
+  "a": "What is your return policy?",
+  "b": "Can you explain the return policy?",
+  "same": true
+ },
+ {
+  "a": "Where is my order?",
+  "b": "Where's my order right now?",
+  "same": true
+ },
+ {
+  "a": "Can I change my delivery address?",
+  "b": "Is it possible to change the delivery address?",
+  "same": true
+ },
+ {
+  "a": "Do you ship internationally?",
+  "b": "Do you offer international shipping?",
+  "same": true
+ },
+ {
+  "a": "How do I cancel my order?",
+  "b": "How can I cancel an order?",
+  "same": true
+ },
+ {
+  "a": "My package arrived damaged, what do I do?",
+  "b": "What should I do if my package arrived damaged?",
+  "same": true
+ },
+ {
+  "a": "Is cash on delivery available?",
+  "b": "Can I pay cash on delivery?",
+  "same": true
+ },
+ {
+  "a": "How do I reset my password?",
+  "b": "How can I reset the password on my account?",
+  "same": true
+ },
+ {
+  "a": "What payment methods do you accept?",
+  "b": "Which payment methods are accepted?",
+  "same": true
+ },
+ {
+  "a": "Can I get an invoice for my purchase?",
+  "b": "How do I get an invoice for a purchase?",
+  "same": true
+ },
+ {
+  "a": "How do I track my shipment?",
+  "b": "How can I track the shipment?",
+  "same": true
+ },
+ {
+  "a": "Are there any discounts for students?",
+  "b": "Do students get a discount?",
+  "same": true
+ },
+ {
+  "a": "What are your customer support hours?",
+  "b": "When is customer support available, what hours?",
+  "same": true
+ },
+ {
+  "a": "Can I exchange an item for a different size?",
+  "b": "Is it possible to exchange an item for another size?",
+  "same": true
+ },
+ {
+  "a": "How do I apply a coupon code?",
+  "b": "Where do I apply a coupon code?",
+  "same": true
+ },
+ {
+  "a": "Why was my payment declined?",
+  "b": "My payment was declined, why?",
+  "same": true
+ },
+ {
+  "a": "How do I delete my account?",
+  "b": "How can I delete my account permanently?",
+  "same": true
+ },
+ {
+  "a": "Does the warranty cover water damage?",
+  "b": "Is water damage covered by the warranty?",
+  "same": true
+ },
+ {
+  "a": "My order ORD-10002 arrived damaged, please refund me.",
+  "b": "Please refund me, order ORD-10002 arrived damaged.",
+  "same": true
+ },
+ {
+  "a": "Where is order ORD-10077?",
+  "b": "where is my order ORD-10077",
+  "same": true
+ },
+ {
+  "a": "How long do refunds take to arrive?",
+  "b": "How long does delivery take to arrive?",
+  "same": false
+ },
+ {
+  "a": "What is your return policy?",
+  "b": "What is your privacy policy?",
+  "same": false
+ },
+ {
+  "a": "Where is my order?",
+  "b": "Where is your store?",
+  "same": false
+ },
+ {
+  "a": "Can I change my delivery address?",
+  "b": "Can I change my email address?",
+  "same": false
+ },
+ {
+  "a": "Do you ship internationally?",
+  "b": "Do you ship on weekends?",
+  "same": false
+ },
+ {
+  "a": "How do I cancel my order?",
+  "b": "How do I cancel my subscription?",
+  "same": false
+ },
+ {
+  "a": "My package arrived damaged, what do I do?",
+  "b": "My package never arrived, what do I do?",
+  "same": false
+ },
+ {
+  "a": "Is cash on delivery available?",
+  "b": "Is same day delivery available?",
+  "same": false
+ },
+ {
+  "a": "How do I reset my password?",
+  "b": "How do I reset my router?",
+  "same": false
+ },
+ {
+  "a": "What payment methods do you accept?",
+  "b": "What return methods do you accept?",
+  "same": false
+ },
+ {
+  "a": "Can I get an invoice for my purchase?",
+  "b": "Can I get a refund for my purchase?",
+  "same": false
+ },
+ {
+  "a": "How do I track my shipment?",
+  "b": "How do I return my shipment?",
+  "same": false
+ },
+ {
+  "a": "Are there any discounts for students?",
+  "b": "Are there any jobs for students?",
+  "same": false
+ },
+ {
+  "a": "What are your customer support hours?",
+  "b": "What are your warehouse hours?",
+  "same": false
+ },
+ {
+  "a": "Can I exchange an item for a different size?",
+  "b": "Can I exchange an item for a different colour?",
+  "same": false
+ },
+ {
+  "a": "How do I apply a coupon code?",
+  "b": "How do I apply for a job?",
+  "same": false
+ },
+ {
+  "a": "Why was my payment declined?",
+  "b": "Why was my order cancelled?",
+  "same": false
+ },
+ {
+  "a": "How do I delete my account?",
+  "b": "How do I delete my address?",
+  "same": false
+ },
+ {
+  "a": "Does the warranty cover water damage?",
+  "b": "Does the warranty cover screen damage?",
+  "same": false
+ },
+ {
+  "a": "Refund order ORD-12345",
+  "b": "Refund order ORD-54321",
+  "same": false
+ },
+ {
+  "a": "The TV from order ORD-10023 stopped working on day two. I want a refund.",
+  "b": "The TV from order ORD-10006 stopped working on day two. I want a refund.",
+  "same": false
+ },
+ {
+  "a": "Hi, my order ORD-10002 arrived damaged. Please refund me.",
+  "b": "Hi, my order ORD-10871 arrived damaged. Please refund me.",
+  "same": false
+ },
+ {
+  "a": "Please refund 2,499 rupees for my blender order, it arrived cracked.",
+  "b": "Please refund 24,990 rupees for my blender order, it arrived cracked.",
+  "same": false
+ },
+ {
+  "a": "Send the invoice for my last order to asha@example.com please.",
+  "b": "Send the invoice for my last order to ravi@example.com please.",
+  "same": false
+ },
+ {
+  "a": "I'd like a refund for ORD-10442, I changed my mind.",
+  "b": "I'd like a refund for ORD-10017, I changed my mind.",
+  "same": false
+ }
+]

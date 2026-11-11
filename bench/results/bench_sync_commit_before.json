@@ -1,0 +1,46 @@
+{
+  "workload": "synchronous_commit",
+  "on": {
+    "workload": "noop",
+    "label": "synchronous_commit=on",
+    "runs": 300,
+    "steps_per_run": 10,
+    "batching": true,
+    "workers": 4,
+    "wall_s": 11.96,
+    "steps_per_s": 263.5,
+    "overhead_ms_p50": 67.57,
+    "overhead_ms_p99": 4936.16,
+    "pg_commits_per_s": 408.4,
+    "pg_wal_mb_per_s": 0.42,
+    "pg_commits_per_step": 1.64
+  },
+  "off": {
+    "workload": "noop",
+    "label": "synchronous_commit=off",
+    "runs": 300,
+    "steps_per_run": 10,
+    "batching": true,
+    "workers": 4,
+    "wall_s": 9.08,
+    "steps_per_s": 352.2,
+    "overhead_ms_p50": 113.91,
+    "overhead_ms_p99": 4210.94,
+    "pg_commits_per_s": 556.9,
+    "pg_wal_mb_per_s": 0.53,
+    "pg_commits_per_step": 1.69
+  },
+  "env": {
+    "machine": "AMD64",
+    "os": "Windows-11-10.0.26200-SP0",
+    "cpus": 8,
+    "python": "3.13.0",
+    "go": "go version go1.26.4 windows/amd64",
+    "docker": "Docker version 29.8.2, build 7fc2dff",
+    "docker_cpus": "8",
+    "docker_mem_gb": 7.6,
+    "postgres": "16",
+    "git_commit": "uncommitted",
+    "at": "2026-11-09T21:24:27"
+  }
+}

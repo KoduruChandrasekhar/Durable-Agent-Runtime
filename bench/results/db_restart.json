@@ -1,0 +1,8 @@
+{
+  "runs": 150,
+  "completed": 150,
+  "runs_missing_acknowledged_events": 0,
+  "seq_gaps": 0,
+  "recovered_in_s": 11.4,
+  "passed": true
+}

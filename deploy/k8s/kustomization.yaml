@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: keel
+resources:
+  - base.yaml
+  - apps.yaml
+# kind_up.sh copies deploy/policy.yaml and deploy/gateway.yaml next to this file.
+configMapGenerator:
+  - name: keel-policy
+    files: [policy.yaml]
+  - name: keel-gateway-config
+    files: [gateway.yaml]
+secretGenerator:
+  - name: keel-secrets
+    literals:
+      - database-url=postgres://keel:keel@postgres:5432/keel?sslmode=disable
+      - postgres-password=keel
+      - worker-token=change-me-worker-token
+      - api-keys=admin-key=ops:root:admin
+generatorOptions:
+  disableNameSuffixHash: true

@@ -1,0 +1,68 @@
+# Guardrail rules evaluated before every tool call (CEL conditions).
+# Variables: args (tool arguments), run (tainted, spent_usd, budget_usd, input,
+# facts, tool_counts, dry_run), tool (name, risk), tenant.
+# run.count('<tool>') = how many times that tool already ran in this run.
+# Decisions are journaled, so editing this file never changes how an existing
+# run replays.
+
+- id: big-refund-needs-human
+  tool: issue_refund
+  when: "args.amount_inr > 5000"
+  action: require_approval
+  approvers: [support-leads]
+  expires_in: 48h
+  on_expiry: reject
+  reason: refunds above 5,000 INR need a support lead
+
+- id: one-refund-per-ticket
+  tool: issue_refund
+  when: "run.count('issue_refund') >= 1"
+  action: deny
+  reason: a ticket gets at most one refund
+
+- id: refund-within-order-total
+  tool: issue_refund
+  when: "has(run.facts.order_total_inr) && args.amount_inr > run.facts.order_total_inr"
+  action: deny
+  reason: refund larger than the order total
+
+- id: refund-only-when-eligible
+  tool: issue_refund
+  when: "has(run.facts.eligible) && run.facts.eligible == false"
+  action: deny
+  reason: the agent's eligibility check failed for this order
+
+- id: refund-only-the-ticket-order
+  tool: issue_refund
+  when: "has(run.facts.order_id) && args.order_id != run.facts.order_id"
+  action: deny
+  reason: refund for an order that is not on this ticket
+
+- id: no-high-risk-after-untrusted-input
+  tool_risk: high
+  when: "run.tainted"
+  action: require_approval
+  approvers: [support-leads]
+  expires_in: 48h
+  on_expiry: reject
+  reason: untrusted text reached the model before a high-risk action
+
+- id: email-only-the-customer
+  tool: send_email
+  when: "args.to != run.input.customer_email"
+  action: deny
+  reason: emails may only go to the ticket's customer
+
+- id: research-outline-needs-review
+  tool: confirm_outline
+  action: require_approval
+  approvers: [research-editors]
+  expires_in: 7d
+  on_expiry: reject
+  reason: a human confirms the report before it is published
+
+- id: sandbox-network-is-off
+  tool: run_python
+  when: "has(args.network) && args.network == true"
+  action: deny
+  reason: sandboxed code never gets network access

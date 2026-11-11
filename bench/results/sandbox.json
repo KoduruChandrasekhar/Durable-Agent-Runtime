@@ -1,0 +1,133 @@
+{
+  "escape_tests": {
+    "network_access": {
+      "blocked": true,
+      "exit_code": 1,
+      "timed_out": false,
+      "oom_killed": false,
+      "stdout": "",
+      "stderr_tail": "r/local/lib/python3.12/urllib/request.py\", line 1360, in do_open\n    raise URLError(err)\nurllib.error.URLError: <urlopen error [Errno 101] Network unreachable>\n"
+    },
+    "dns_lookup": {
+      "blocked": true,
+      "exit_code": 1,
+      "timed_out": false,
+      "oom_killed": false,
+      "stdout": "",
+      "stderr_tail": "Traceback (most recent call last):\n  File \"<string>\", line 10, in <module>\n  File \"<agent>\", line 2, in <module>\nsocket.gaierror: [Errno -3] Try again\n"
+    },
+    "fork_bomb": {
+      "blocked": true,
+      "exit_code": 0,
+      "timed_out": false,
+      "oom_killed": false,
+      "stdout": "blocked after 126\n",
+      "stderr_tail": ""
+    },
+    "write_outside_tmp": {
+      "blocked": true,
+      "exit_code": 1,
+      "timed_out": false,
+      "oom_killed": false,
+      "stdout": "",
+      "stderr_tail": "t recent call last):\n  File \"<string>\", line 10, in <module>\n  File \"<agent>\", line 1, in <module>\nOSError: [Errno 30] Read-only file system: '/etc/keel_pwned'\n"
+    },
+    "write_root_home": {
+      "blocked": true,
+      "exit_code": 1,
+      "timed_out": false,
+      "oom_killed": false,
+      "stdout": "",
+      "stderr_tail": "(most recent call last):\n  File \"<string>\", line 10, in <module>\n  File \"<agent>\", line 2, in <module>\nPermissionError: [Errno 13] Permission denied: '/root/x'\n"
+    },
+    "read_env_secrets": {
+      "blocked": true,
+      "exit_code": 0,
+      "timed_out": false,
+      "oom_killed": false,
+      "stdout": "clean []\n",
+      "stderr_tail": ""
+    },
+    "fill_disk": {
+      "blocked": true,
+      "exit_code": 0,
+      "timed_out": false,
+      "oom_killed": false,
+      "stdout": "blocked 28\n",
+      "stderr_tail": ""
+    },
+    "exceed_memory": {
+      "blocked": true,
+      "exit_code": 137,
+      "timed_out": false,
+      "oom_killed": true,
+      "stdout": "",
+      "stderr_tail": ""
+    },
+    "become_root": {
+      "blocked": true,
+      "exit_code": 1,
+      "timed_out": false,
+      "oom_killed": false,
+      "stdout": "",
+      "stderr_tail": "eback (most recent call last):\n  File \"<string>\", line 10, in <module>\n  File \"<agent>\", line 2, in <module>\nPermissionError: [Errno 1] Operation not permitted\n"
+    },
+    "docker_socket": {
+      "blocked": true,
+      "exit_code": 0,
+      "timed_out": false,
+      "oom_killed": false,
+      "stdout": "no socket\n",
+      "stderr_tail": ""
+    },
+    "infinite_loop": {
+      "blocked": true,
+      "exit_code": -1,
+      "timed_out": true,
+      "oom_killed": false,
+      "stdout": "",
+      "stderr_tail": ""
+    },
+    "huge_output": {
+      "blocked": true,
+      "exit_code": 0,
+      "timed_out": false,
+      "oom_killed": false,
+      "stdout": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "stderr_tail": ""
+    }
+  },
+  "all_blocked": true,
+  "latency": {
+    "warm": {
+      "p50_ms": 1500.5932499916526,
+      "max_ms": 1619.4925000017975
+    },
+    "cold": {
+      "p50_ms": 2410.416399987298,
+      "max_ms": 4179.332700005034
+    }
+  },
+  "samples": {
+    "warm": [
+      1012.2878999973182,
+      1160.4625000036322,
+      1619.4925000017975,
+      1477.0469999930356,
+      1341.383599996334,
+      1571.1937999876682,
+      1524.1394999902695,
+      1544.4691000157036
+    ],
+    "cold": [
+      2616.2789999798406,
+      2204.5537999947555,
+      2802.885100012645,
+      4179.332700005034,
+      3049.188100005267,
+      1808.387800003402,
+      1632.3836000228766,
+      1811.9835999968927
+    ]
+  }
+}

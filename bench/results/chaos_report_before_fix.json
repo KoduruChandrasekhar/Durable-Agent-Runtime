@@ -1,0 +1,64 @@
+{
+  "runs": 1000,
+  "by_status": {
+    "completed": 1000
+  },
+  "lost_runs": 0,
+  "stuck_runs": [],
+  "failed_by_error": {},
+  "refunds": 3,
+  "max_refunds_per_order": 1,
+  "duplicate_refunds": 0,
+  "emails": 1000,
+  "max_emails_per_run": 1,
+  "duplicate_emails": 0,
+  "completed_without_exactly_one_email": 0,
+  "emails_about_another_order": 994,
+  "wrong_order_examples": [
+    {
+      "run": "dd3a05e2-f151-4dee-8f8c-0c9fb68556d4",
+      "order": "ORD-10001",
+      "mentions": [
+        "ORD-10002"
+      ]
+    },
+    {
+      "run": "82930a6f-f101-4e81-a900-3438a3433144",
+      "order": "ORD-10003",
+      "mentions": [
+        "ORD-10008"
+      ]
+    },
+    {
+      "run": "9c159ae4-bcd4-4058-b126-ec642e8c9ef1",
+      "order": "ORD-10039",
+      "mentions": [
+        "ORD-10008"
+      ]
+    },
+    {
+      "run": "c3ccfa09-20c7-4224-bdde-94c1f7fa3b93",
+      "order": "ORD-10038",
+      "mentions": [
+        "ORD-10008"
+      ]
+    },
+    {
+      "run": "5c15dd5a-4a10-44df-8125-4b79b0d812a2",
+      "order": "ORD-10010",
+      "mentions": [
+        "ORD-10008"
+      ]
+    }
+  ],
+  "unauthorized_high_risk_actions": 0,
+  "unauthorized_examples": [],
+  "seq_gaps_or_duplicates": 0,
+  "epoch_regressions": 0,
+  "recoveries": 222,
+  "recoveries_after_crash": 216,
+  "llm_tokens": 606194,
+  "wasted_llm_tokens": 12809,
+  "llm_calls_reexecuted": 49,
+  "passed": false
+}

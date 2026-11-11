@@ -1,0 +1,78 @@
+# Model gateway configuration. Prices are USD per million tokens; this file is
+# versioned (pricing_version is recorded in every response and StepCompleted).
+pricing_version: "2026-11-01"
+
+providers:
+  # keel's mock LLM server (OpenAI-compatible): scripted agent behaviour,
+  # latency and error injection. Used by every load and chaos test.
+  mock:
+    kind: openai_compat
+    base_url: ${KEEL_MOCK_LLM_URL:-http://localhost:8000/v1}
+    rpm: 600000
+    tpm: 400000000
+    timeout_s: 30
+  # A second mock endpoint acts as the "hosted" fallback in outage tests.
+  mock_fallback:
+    kind: openai_compat
+    base_url: ${KEEL_MOCK_LLM_FALLBACK_URL:-http://localhost:8000/fallback/v1}
+    rpm: 600000
+    tpm: 400000000
+  # Your own inference server (vLLM / llama.cpp / a Kaggle T4), OpenAI-compatible.
+  local:
+    kind: openai_compat
+    base_url: ${KEEL_LOCAL_LLM_URL:-http://localhost:8001/v1}
+    api_key_env: KEEL_LOCAL_LLM_KEY
+    rpm: 600
+    tpm: 2000000
+  openai:
+    kind: openai_compat
+    base_url: https://api.openai.com/v1
+    api_key_env: OPENAI_API_KEY
+    rpm: 500
+    tpm: 200000
+  anthropic:
+    kind: anthropic
+    base_url: https://api.anthropic.com
+    api_key_env: ANTHROPIC_API_KEY
+    rpm: 50
+    tpm: 100000
+
+models:
+  mock-small:   {provider: mock, upstream: mock-small, input_per_mtok: 0.15, output_per_mtok: 0.60, context: 32000, tier: small}
+  mock-large:   {provider: mock, upstream: mock-large, input_per_mtok: 3.00, output_per_mtok: 15.00, context: 200000, tier: large}
+  mock-hosted:  {provider: mock_fallback, upstream: mock-small, input_per_mtok: 0.25, output_per_mtok: 1.00, context: 32000, tier: small}
+  local-small:  {provider: local, upstream: local, input_per_mtok: 0.0, output_per_mtok: 0.0, context: 8192, tier: small}
+  gpt-small:    {provider: openai, upstream: gpt-4o-mini, input_per_mtok: 0.15, output_per_mtok: 0.60, context: 128000, tier: small}
+  claude-haiku: {provider: anthropic, upstream: claude-haiku-5-5, input_per_mtok: 1.00, output_per_mtok: 5.00, context: 200000, tier: small}
+  claude-sonnet: {provider: anthropic, upstream: claude-sonnet-5-5, input_per_mtok: 3.00, output_per_mtok: 15.00, context: 200000, tier: large}
+
+routes:
+  # Rules first: short requests and quarantined extraction go to the small
+  # model; the chain is the fallback order when a circuit is open.
+  router:default:
+    rules:
+      - {quarantined: true, model: mock-small}
+      - {max_input_tokens: 1500, model: mock-small}
+    chain: [mock-large, mock-hosted]
+    escalate_to: mock-large
+  router:support:
+    rules:
+      - {quarantined: true, model: mock-small}
+      - {max_input_tokens: 2500, model: mock-small}
+    chain: [mock-large, mock-hosted]
+    escalate_to: mock-large
+  router:always-large:
+    chain: [mock-large, mock-hosted]
+  router:always-small:
+    chain: [mock-small, mock-hosted]
+  router:outage-demo:
+    chain: [mock-small, mock-hosted]
+  router:real:
+    rules:
+      - {max_input_tokens: 2000, model: claude-haiku}
+    chain: [claude-haiku, claude-sonnet]
+    escalate_to: claude-sonnet
+
+semantic_cache:
+  enabled: true
+  threshold: 0.80   # from bench/results/cache_curve.json: lowest threshold with zero wrong hits is 0.76

@@ -1,0 +1,78 @@
+{
+  "workload": "scaling",
+  "points": [
+    {
+      "workload": "noop",
+      "label": "1 workers",
+      "runs": 300,
+      "steps_per_run": 10,
+      "batching": true,
+      "workers": 1,
+      "wall_s": 6.76,
+      "steps_per_s": 468.8,
+      "overhead_ms_p50": 51.88,
+      "overhead_ms_p99": 652.48,
+      "pg_commits_per_s": 692.3,
+      "pg_wal_mb_per_s": 0.46,
+      "pg_commits_per_step": 1.58
+    },
+    {
+      "workload": "noop",
+      "label": "2 workers",
+      "runs": 300,
+      "steps_per_run": 10,
+      "batching": true,
+      "workers": 2,
+      "wall_s": 6.84,
+      "steps_per_s": 474.5,
+      "overhead_ms_p50": 33.69,
+      "overhead_ms_p99": 305.47,
+      "pg_commits_per_s": 835.7,
+      "pg_wal_mb_per_s": 0.57,
+      "pg_commits_per_step": 1.92
+    },
+    {
+      "workload": "noop",
+      "label": "4 workers",
+      "runs": 300,
+      "steps_per_run": 10,
+      "batching": true,
+      "workers": 4,
+      "wall_s": 6.85,
+      "steps_per_s": 477.1,
+      "overhead_ms_p50": 53.63,
+      "overhead_ms_p99": 500.34,
+      "pg_commits_per_s": 1063.8,
+      "pg_wal_mb_per_s": 0.62,
+      "pg_commits_per_step": 2.45
+    },
+    {
+      "workload": "noop",
+      "label": "8 workers",
+      "runs": 300,
+      "steps_per_run": 10,
+      "batching": true,
+      "workers": 8,
+      "wall_s": 7.09,
+      "steps_per_s": 462.5,
+      "overhead_ms_p50": 161.95,
+      "overhead_ms_p99": 1284.18,
+      "pg_commits_per_s": 842.3,
+      "pg_wal_mb_per_s": 0.58,
+      "pg_commits_per_step": 2.01
+    }
+  ],
+  "env": {
+    "machine": "AMD64",
+    "os": "Windows-11-10.0.26200-SP0",
+    "cpus": 8,
+    "python": "3.13.0",
+    "go": "go version go1.26.4 windows/amd64",
+    "docker": "Docker version 29.8.2, build 7fc2dff",
+    "docker_cpus": "8",
+    "docker_mem_gb": 7.6,
+    "postgres": "16",
+    "git_commit": "uncommitted",
+    "at": "2026-11-09T21:33:43"
+  }
+}

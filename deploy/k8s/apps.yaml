@@ -1,0 +1,131 @@
+# Workers, mock services, UI and nightly backups.
+#
+# Workers: on SIGTERM they stop polling, let running steps finish and hand
+# runs back (status pending) within the grace period instead of waiting for
+# lease expiry. KEDA scales them on queue depth (keda/scaledobject.yaml).
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: keel-worker}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: keel-worker}}
+  strategy: {rollingUpdate: {maxUnavailable: 25%, maxSurge: 25%}}
+  template:
+    metadata:
+      labels: {app: keel-worker}
+      annotations: {prometheus.io/scrape: "true", prometheus.io/port: "9100"}
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: worker
+          image: keel/python:dev
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "demos.worker"]
+          env:
+            - {name: KEEL_SERVER, value: "keel-server:7233"}
+            - {name: KEEL_GATEWAY_URL, value: "http://gateway:8090"}
+            - {name: KEEL_MOCKS_URL, value: "http://mocks:9000"}
+            - {name: KEEL_MAX_CONCURRENT, value: "100"}
+            - {name: KEEL_METRICS_PORT, value: "9100"}
+            - {name: KEEL_DEFAULT_MODEL, value: "router:support"}
+            - name: KEEL_WORKER_TOKEN
+              valueFrom: {secretKeyRef: {name: keel-secrets, key: worker-token}}
+          ports: [{containerPort: 9100, name: metrics}]
+          resources: {requests: {cpu: 250m, memory: 256Mi}, limits: {memory: 1Gi}}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: keel-worker}
+spec: {maxUnavailable: 25%, selector: {matchLabels: {app: keel-worker}}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: mock-llm}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: mock-llm}}
+  template:
+    metadata: {labels: {app: mock-llm}}
+    spec:
+      containers:
+        - name: mock-llm
+          image: keel/python:dev
+          imagePullPolicy: IfNotPresent
+          command: ["uvicorn", "demos.mocks.mock_llm:app", "--host", "0.0.0.0", "--port", "8000"]
+          env: [{name: KEEL_MOCK_LLM_LATENCY_MS, value: "500,2000"}]
+          ports: [{containerPort: 8000}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: mock-llm}
+spec: {selector: {app: mock-llm}, ports: [{port: 8000}]}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: mocks}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: mocks}}
+  template:
+    metadata: {labels: {app: mocks}}
+    spec:
+      containers:
+        - name: mocks
+          image: keel/python:dev
+          imagePullPolicy: IfNotPresent
+          command: ["uvicorn", "demos.mocks.services:app", "--host", "0.0.0.0", "--port", "9000"]
+          ports: [{containerPort: 9000}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: mocks}
+spec: {selector: {app: mocks}, ports: [{port: 9000}]}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: keel-ui}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: keel-ui}}
+  template:
+    metadata: {labels: {app: keel-ui}}
+    spec:
+      containers:
+        - name: ui
+          image: keel/ui:dev
+          imagePullPolicy: IfNotPresent
+          env: [{name: KEEL_API, value: "http://keel-server:8080"}]
+          ports: [{containerPort: 80}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: keel-ui}
+spec: {type: NodePort, selector: {app: keel-ui}, ports: [{port: 80, nodePort: 30300}]}
+---
+# Nightly pg_dump; the restore is tested by scripts/backup_restore_test.sh.
+apiVersion: batch/v1
+kind: CronJob
+metadata: {name: postgres-backup}
+spec:
+  schedule: "15 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: dump
+              image: postgres:16-alpine
+              command: ["sh", "-c", "pg_dump -Fc \"$DATABASE_URL\" > /backup/keel-$(date +%F).dump"]
+              env:
+                - name: DATABASE_URL
+                  valueFrom: {secretKeyRef: {name: keel-secrets, key: database-url}}
+              volumeMounts: [{name: backup, mountPath: /backup}]
+          volumes:
+            - name: backup
+              persistentVolumeClaim: {claimName: postgres-backups}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: postgres-backups}
+spec: {accessModes: [ReadWriteOnce], resources: {requests: {storage: 20Gi}}}

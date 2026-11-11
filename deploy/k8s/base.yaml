@@ -1,0 +1,120 @@
+# Namespace, PostgreSQL, keel-server and the model gateway.
+apiVersion: v1
+kind: Namespace
+metadata: {name: keel}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: postgres}
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector: {matchLabels: {app: postgres}}
+  template:
+    metadata: {labels: {app: postgres}}
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          args: ["-c", "max_connections=500", "-c", "shared_buffers=512MB", "-c", "synchronous_commit=on"]
+          env:
+            - {name: POSTGRES_USER, value: keel}
+            - {name: POSTGRES_DB, value: keel}
+            - name: POSTGRES_PASSWORD
+              valueFrom: {secretKeyRef: {name: keel-secrets, key: postgres-password}}
+            - {name: PGDATA, value: /var/lib/postgresql/data/pgdata}
+          ports: [{containerPort: 5432}]
+          readinessProbe: {exec: {command: ["pg_isready", "-U", "keel"]}, periodSeconds: 3}
+          volumeMounts: [{name: data, mountPath: /var/lib/postgresql/data}]
+          resources: {requests: {cpu: "1", memory: 1Gi}}
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec: {accessModes: [ReadWriteOnce], resources: {requests: {storage: 10Gi}}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: postgres}
+spec: {selector: {app: postgres}, ports: [{port: 5432}]}
+---
+# Two stateless replicas; the background loops run on whichever holds the
+# PostgreSQL advisory lock and move within seconds if that pod dies.
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: keel-server}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: keel-server}}
+  strategy: {rollingUpdate: {maxUnavailable: 0, maxSurge: 1}}
+  template:
+    metadata:
+      labels: {app: keel-server}
+      annotations: {prometheus.io/scrape: "true", prometheus.io/port: "8080"}
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: server
+          image: keel/server:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KEEL_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: keel-secrets, key: database-url}}
+            - name: KEEL_WORKER_TOKEN
+              valueFrom: {secretKeyRef: {name: keel-secrets, key: worker-token}}
+            - name: KEEL_API_KEYS
+              valueFrom: {secretKeyRef: {name: keel-secrets, key: api-keys}}
+            - {name: KEEL_POLICY_FILE, value: /etc/keel/policy/policy.yaml}
+            - name: KEEL_REPLICA_ID
+              valueFrom: {fieldRef: {fieldPath: metadata.name}}
+          ports: [{containerPort: 8080, name: http}, {containerPort: 7233, name: grpc}]
+          readinessProbe: {httpGet: {path: /ready, port: 8080}, periodSeconds: 3}
+          livenessProbe: {httpGet: {path: /health, port: 8080}, periodSeconds: 10}
+          volumeMounts: [{name: policy, mountPath: /etc/keel/policy}]
+          resources: {requests: {cpu: 500m, memory: 256Mi}}
+      volumes: [{name: policy, configMap: {name: keel-policy}}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: keel-server}
+spec:
+  type: NodePort
+  selector: {app: keel-server}
+  ports:
+    - {name: http, port: 8080, nodePort: 30080}
+    - {name: grpc, port: 7233}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: keel-server}
+spec: {minAvailable: 1, selector: {matchLabels: {app: keel-server}}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: keel-gateway}
+spec:
+  replicas: 1   # with more replicas set KEEL_REDIS_URL so rate limits are shared
+  selector: {matchLabels: {app: keel-gateway}}
+  template:
+    metadata: {labels: {app: keel-gateway}}
+    spec:
+      containers:
+        - name: gateway
+          image: keel/gateway:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KEEL_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: keel-secrets, key: database-url}}
+            - {name: KEEL_GATEWAY_CONFIG, value: /etc/keel/gateway/gateway.yaml}
+            - {name: KEEL_MOCK_LLM_URL, value: "http://mock-llm:8000/v1"}
+            - {name: KEEL_MOCK_LLM_FALLBACK_URL, value: "http://mock-llm:8000/fallback/v1"}
+            # Provider keys live only in the gateway, from a Secret, e.g.:
+            # - name: ANTHROPIC_API_KEY
+            #   valueFrom: {secretKeyRef: {name: llm-provider-keys, key: anthropic}}
+          ports: [{containerPort: 8090}]
+          readinessProbe: {httpGet: {path: /health, port: 8090}}
+          volumeMounts: [{name: cfg, mountPath: /etc/keel/gateway}]
+      volumes: [{name: cfg, configMap: {name: keel-gateway-config}}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: gateway}
+spec: {selector: {app: keel-gateway}, ports: [{port: 8090}]}

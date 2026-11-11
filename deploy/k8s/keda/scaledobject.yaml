@@ -1,0 +1,35 @@
+# Scale workers 1 -> 20 on the number of runnable pending runs
+# (KEDA's PostgreSQL scaler; keel_pending_runs in Prometheus works too).
+apiVersion: v1
+kind: Secret
+metadata: {name: keda-postgres, namespace: keel}
+stringData:
+  connection: "postgresql://keel:keel@postgres.keel.svc.cluster.local:5432/keel?sslmode=disable"
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata: {name: keda-postgres, namespace: keel}
+spec:
+  secretTargetRef:
+    - {parameter: connection, name: keda-postgres, key: connection}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata: {name: keel-worker, namespace: keel}
+spec:
+  scaleTargetRef: {name: keel-worker}
+  minReplicaCount: 1
+  maxReplicaCount: 20
+  pollingInterval: 5
+  cooldownPeriod: 60
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown: {stabilizationWindowSeconds: 60, policies: [{type: Percent, value: 50, periodSeconds: 30}]}
+  triggers:
+    - type: postgresql
+      metadata:
+        query: "SELECT count(*) FROM runs WHERE status = 'pending' AND available_at <= now()"
+        targetQueryValue: "100"
+        activationTargetQueryValue: "1"
+      authenticationRef: {name: keda-postgres}

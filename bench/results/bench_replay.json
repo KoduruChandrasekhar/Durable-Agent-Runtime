@@ -1,0 +1,33 @@
+{
+  "workload": "replay",
+  "points": [
+    {
+      "steps": 50,
+      "events": 102,
+      "replay_ms_p50": 1.555,
+      "replay_ms_min": 1.525,
+      "replay_ms_max": 1.603,
+      "replay_us_per_event": 15.25
+    },
+    {
+      "steps": 500,
+      "events": 1002,
+      "replay_ms_p50": 17.733,
+      "replay_ms_min": 17.325,
+      "replay_ms_max": 19.111,
+      "replay_us_per_event": 17.7
+    },
+    {
+      "steps": 5000,
+      "events": 10002,
+      "replay_ms_p50": 182.105,
+      "replay_ms_min": 179.632,
+      "replay_ms_max": 187.695,
+      "replay_us_per_event": 18.21
+    }
+  ],
+  "step_cost": {
+    "in_process_keel_step_us": 183.8,
+    "plain_call_us": 0.066
+  }
+}

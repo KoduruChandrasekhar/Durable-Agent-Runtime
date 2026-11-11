@@ -1,0 +1,48 @@
+{
+  "runs": 1000,
+  "by_status": {
+    "completed": 1000
+  },
+  "lost_runs": 0,
+  "stuck_runs": [],
+  "failed_by_error": {},
+  "refunds": 640,
+  "max_refunds_per_order": 1,
+  "refunds_by_runs_outside_this_experiment": 2,
+  "duplicate_refunds": 0,
+  "emails": 1000,
+  "max_emails_per_run": 1,
+  "duplicate_emails": 0,
+  "completed_without_exactly_one_email": 0,
+  "emails_about_another_order": 0,
+  "wrong_order_examples": [],
+  "unauthorized_high_risk_actions": 0,
+  "unauthorized_examples": [],
+  "seq_gaps_or_duplicates": 0,
+  "epoch_regressions": 0,
+  "recoveries": 2365,
+  "recoveries_after_crash": 1605,
+  "llm_tokens": 821456,
+  "wasted_llm_tokens": 88979,
+  "llm_calls_reexecuted": 249,
+  "passed": true,
+  "wall_s": 1192.5,
+  "worker_kills": 69,
+  "approvals_decided": {
+    "approve": 106,
+    "reject": 16
+  },
+  "config": {
+    "runs": 1000,
+    "seed": 7,
+    "version": "2",
+    "kill_every": 3.0,
+    "llm_error_rate": 0.1,
+    "fail_after_commit": 0.2,
+    "approve_rate": 0.8,
+    "settle": 60.0,
+    "timeout": 2400,
+    "manifest": "bench/results/chaos_manifest.json",
+    "json": "bench/results/chaos_report.json"
+  }
+}

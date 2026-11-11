@@ -1,0 +1,16 @@
+bin/
+data/
+ui/node_modules/
+ui/dist/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.hypothesis/
+.ruff_cache/
+.mypy_cache/
+# copied in by deploy/k8s/kind_up.sh
+deploy/k8s/policy.yaml
+deploy/k8s/gateway.yaml
+# raw logs; the JSON results and charts are kept
+bench/results/*.log

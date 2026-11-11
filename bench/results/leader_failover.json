@@ -1,0 +1,9 @@
+{
+  "old_leader": "server-standby",
+  "new_leader": "server",
+  "takeover_s": 1.82,
+  "sleeper_runs": 100,
+  "completed": 100,
+  "max_timer_lateness_s": 2.02,
+  "passed": true
+}

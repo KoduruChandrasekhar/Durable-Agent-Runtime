@@ -1,0 +1,90 @@
+name: ci
+on:
+  push: {branches: [main]}
+  pull_request:
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: {POSTGRES_USER: keel, POSTGRES_PASSWORD: keel, POSTGRES_DB: keel_test}
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U keel" --health-interval 2s --health-retries 30
+    env:
+      KEEL_TEST_DATABASE_URL: postgres://keel:keel@localhost:5432/keel_test?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: {go-version: "1.26"}
+      - uses: golangci/golangci-lint-action@v6
+        with: {version: latest, args: --timeout 5m}
+      - run: go vet ./...
+      # -p 1: the store and gateway packages share one test database.
+      - run: go test -race -p 1 -count=1 ./...
+      - name: fuzz (60 s per target)
+        run: |
+          go test ./server/internal/policy -run '^$' -fuzz FuzzEvaluate -fuzztime 60s
+          go test ./server/internal/pii -run '^$' -fuzz FuzzMaskJSON -fuzztime 60s
+          go test ./server/internal/blob -run '^$' -fuzz FuzzResolve -fuzztime 60s
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -e "sdk/python[dev,mcp]" fastapi uvicorn psycopg[binary] matplotlib
+      - run: ruff check sdk/python/keel demos sim evals chaos bench
+      - run: mypy sdk/python/keel
+      - run: python -m keel.cli lint demos bench
+      - run: python -m pytest -q sdk/python/tests
+      - name: deterministic simulation (1,000 seeds)
+        run: PYTHONPATH=. python -m sim.run_seeds --seeds 1000 --small --jobs 4 --json sim.json
+      - name: evals against the mock LLM + gate
+        run: |
+          PYTHONPATH=. python -m evals.runner --versions 2 3 --trials 8 --json evals.json
+          PYTHONPATH=. python -m evals.gate --report evals.json --candidate 2
+          ! PYTHONPATH=. python -m evals.gate --report evals.json --candidate 3   # the worse version must be blocked
+      - name: prompt-injection suite (no attack may succeed)
+        run: |
+          PYTHONPATH=. python -m evals.injection_suite --versions 2 --json injection.json
+          python -c "import json,sys; r=json.load(open('injection.json'))['2']; sys.exit(r['attack_successes'] != 0)"
+      - uses: actions/upload-artifact@v4
+        with: {name: python-results, path: "*.json"}
+
+  conformance-and-api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: {POSTGRES_USER: keel, POSTGRES_PASSWORD: keel, POSTGRES_DB: keel}
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U keel" --health-interval 2s --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: {go-version: "1.26"}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -e "sdk/python[dev]"
+      - run: go build -o keel-server ./server/cmd/keel-server
+      - name: start two servers (auth off for conformance, on for the API contract)
+        run: |
+          export KEEL_DATABASE_URL=postgres://keel:keel@localhost:5432/keel?sslmode=disable
+          KEEL_AUTH=disabled KEEL_HTTP_ADDR=:18080 KEEL_GRPC_ADDR=:17233 ./keel-server &
+          KEEL_SCHEDULER=off KEEL_HTTP_ADDR=:18081 KEEL_GRPC_ADDR=:17234 \
+            KEEL_API_KEYS="admin-key=ops:root:admin;a-writer=tenant-a:alice:runs:write,runs:read;a-reader=tenant-a:audit:runs:read;a-approver=tenant-a:lead:approvals:decide,runs:read,pii:read;b-writer=tenant-b:bob:runs:write,runs:read" \
+            ./keel-server &
+          sleep 5
+      - run: PYTHONPATH=. KEEL_CONFORMANCE_GRPC=localhost:17233 KEEL_CONFORMANCE_URL=http://localhost:18080 python -m pytest -q tests/conformance
+      - run: PYTHONPATH=. KEEL_API_TEST_URL=http://localhost:18081 KEEL_API_TEST_GRPC=localhost:17234 python -m pytest -q tests/api
+
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: "20"}
+      - run: cd ui && npm install && npm run build

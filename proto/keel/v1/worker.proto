@@ -1,0 +1,158 @@
+// Worker protocol between Python workers (execution plane) and keel-server
+// (control plane). The server owns every write to the event log; a worker can
+// only append while it holds the run's lease, and every call after PollRun
+// carries the lease epoch (fencing token).
+syntax = "proto3";
+
+package keel.v1;
+
+option go_package = "github.com/keel-runtime/keel/gen/keelv1;keelv1";
+
+// One entry of a run's append-only event log.
+message Event {
+  int64 seq = 1;
+  string type = 2;
+  string step_id = 3;
+  bytes payload = 4;  // JSON document
+  int64 epoch = 5;
+  int64 created_at_unix_ms = 6;
+}
+
+// A workflow (name + version) a worker can execute, with its input schema.
+message WorkflowDescriptor {
+  string name = 1;
+  string version = 2;
+  bytes input_schema = 3;  // JSON Schema, optional
+}
+
+message PollRequest {
+  string worker_id = 1;
+  repeated string workflows = 2;  // "name@version" keys this worker can run
+  int32 max_wait_ms = 3;          // long-poll budget, capped at 30 s
+  repeated WorkflowDescriptor descriptors = 4;
+}
+
+message RunTask {
+  bool has_task = 1;
+  string run_id = 2;
+  int64 epoch = 3;
+  string workflow = 4;
+  string version = 5;
+  repeated Event history = 6;
+  bytes input = 7;
+  string tenant_id = 8;
+  bool cancel_requested = 9;
+  int64 server_now_unix_ms = 10;
+  int64 lease_ttl_ms = 11;
+  bool dry_run = 12;
+  string parent_run_id = 13;
+  int64 next_seq = 14;
+  int64 created_at_unix_ms = 15;
+  bytes overrides = 16;  // JSON object (fork overrides), may be empty
+  string traceparent = 17;
+}
+
+message AppendRequest {
+  string run_id = 1;
+  int64 epoch = 2;
+  int64 expected_seq = 3;
+  repeated Event events = 4;
+}
+
+message AppendResponse {
+  bool ok = 1;
+  int64 next_seq = 2;
+  string error_code = 3;  // "" | lease_lost | seq_conflict | invalid
+  bool cancel_requested = 4;
+  int64 server_now_unix_ms = 5;
+}
+
+message HeartbeatRequest {
+  string run_id = 1;
+  int64 epoch = 2;
+  string worker_id = 3;
+}
+
+message HeartbeatResponse {
+  bool ok = 1;
+  bool lease_lost = 2;
+  bool cancel_requested = 3;
+  int64 server_now_unix_ms = 4;
+}
+
+// Something a waiting run can be woken by.
+message WaitCondition {
+  string kind = 1;  // timer | signal | approval | child
+  string id = 2;    // timer id, signal wait id, approval id or child run id
+  string name = 3;  // signal name
+  int64 fire_at_unix_ms = 4;  // timers only
+}
+
+message SuspendRequest {
+  string run_id = 1;
+  int64 epoch = 2;
+  repeated WaitCondition waits = 3;
+  int64 available_at_unix_ms = 4;  // retry backoff: pending again at this time
+  string reason = 5;               // wait | retry | handback | parked
+  int64 expected_seq = 6;
+}
+
+message SuspendResponse {
+  bool ok = 1;
+  bool lease_lost = 2;
+  bool woken = 3;  // a wait condition was already satisfied
+}
+
+message FinishRequest {
+  string run_id = 1;
+  int64 epoch = 2;
+  int64 expected_seq = 3;
+  string status = 4;  // completed | failed | cancelled | continued
+  bytes result = 5;   // JSON
+  bytes error = 6;    // JSON
+  bytes continue_input = 7;  // JSON input of the continue-as-new run
+}
+
+message Ack {
+  bool ok = 1;
+  bool lease_lost = 2;
+  string error_code = 3;
+  string new_run_id = 4;
+}
+
+message PolicyRequest {
+  string run_id = 1;
+  int64 epoch = 2;
+  string tool = 3;
+  string tool_risk = 4;
+  bytes args = 5;  // JSON
+  string step_id = 6;
+  repeated string approved_rules = 7;
+}
+
+message PolicyResponse {
+  string decision = 1;  // allow | deny | require_approval
+  string reason = 2;
+  repeated string rule_ids = 3;
+  repeated string approvers = 4;
+  int64 expires_in_ms = 5;
+  string on_expiry = 6;
+  string policy_version = 7;
+  bool lease_lost = 8;
+}
+
+service WorkerService {
+  // Long-poll for a runnable run; returns has_task=false after max_wait_ms.
+  rpc PollRun(PollRequest) returns (RunTask);
+  // Append events; rejected unless epoch and expected_seq match.
+  rpc AppendEvents(AppendRequest) returns (AppendResponse);
+  // Renew the lease (30 s), every 10 s.
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  // Release the run as waiting (timers, signals, approvals, children) or
+  // pending (retry backoff, graceful hand-back).
+  rpc Suspend(SuspendRequest) returns (SuspendResponse);
+  // Completed, failed, cancelled or continued-as-new.
+  rpc Finish(FinishRequest) returns (Ack);
+  // Guardrail decision before a tool call (journaled by the worker).
+  rpc EvaluatePolicy(PolicyRequest) returns (PolicyResponse);
+}

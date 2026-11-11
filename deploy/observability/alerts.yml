@@ -1,0 +1,27 @@
+groups:
+  - name: keel
+    rules:
+      - alert: QueueWaitP99High
+        expr: histogram_quantile(0.99, sum(rate(keel_queue_wait_seconds_bucket[5m])) by (le)) > 5
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "p99 queue wait above 5 s: add workers or check fairness caps"}
+      - alert: FencingRejectionBurst
+        expr: increase(keel_fencing_rejections_total[5m]) > 20
+        labels: {severity: warning}
+        annotations: {summary: "Many writes from stale epochs: workers freezing or leases too short"}
+      - alert: TenantBurningBudgetFast
+        expr: sum by (tenant) (rate(keel_llm_cost_usd_total[15m])) * 3600 > 5
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: "A tenant is spending more than $5/hour on LLM calls"}
+      - alert: NoLeader
+        expr: max(keel_leader) < 1
+        for: 30s
+        labels: {severity: critical}
+        annotations: {summary: "No server replica runs the sweeper and timers"}
+      - alert: CircuitOpen
+        expr: max by (model) (keel_circuit_open) > 0
+        for: 2m
+        labels: {severity: warning}
+        annotations: {summary: "A model's circuit has been open for 2 minutes"}

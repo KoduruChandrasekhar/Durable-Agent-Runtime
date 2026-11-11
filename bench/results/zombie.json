@@ -1,0 +1,13 @@
+{
+  "frozen_container": "keel-worker-1",
+  "runs_held": 17,
+  "pause_s": 60.0,
+  "writes_accepted_from_zombie": 0,
+  "held_runs_finished_elsewhere": 17,
+  "final_statuses": {
+    "completed": 58,
+    "waiting": 2
+  },
+  "resumed_after_s": 60.6,
+  "passed": true
+}

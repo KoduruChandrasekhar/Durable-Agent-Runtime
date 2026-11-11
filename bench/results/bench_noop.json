@@ -1,0 +1,28 @@
+{
+  "workload": "noop",
+  "label": "",
+  "runs": 100,
+  "steps_per_run": 50,
+  "batching": true,
+  "workers": 4,
+  "wall_s": 4.6,
+  "steps_per_s": 1225.4,
+  "overhead_ms_p50": 66.78,
+  "overhead_ms_p99": 264.37,
+  "pg_commits_per_s": 1018.3,
+  "pg_wal_mb_per_s": 0.97,
+  "pg_commits_per_step": 0.95,
+  "env": {
+    "machine": "AMD64",
+    "os": "Windows-11-10.0.26200-SP0",
+    "cpus": 8,
+    "python": "3.13.0",
+    "go": "go version go1.26.4 windows/amd64",
+    "docker": "Docker version 29.8.2, build 7fc2dff",
+    "docker_cpus": "8",
+    "docker_mem_gb": 7.6,
+    "postgres": "16",
+    "git_commit": "uncommitted",
+    "at": "2026-11-09T21:45:21"
+  }
+}

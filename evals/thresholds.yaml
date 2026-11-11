@@ -1,0 +1,7 @@
+# CI eval gate for the refund agent (refund_core suite, mock LLM, 8 trials).
+baseline_version: 2
+routing: routed
+k: 4
+min_pass_k: 0.60          # absolute floor for pass^4
+max_pass_k_drop: 0.10     # relative to the baseline version
+max_cost_increase_pct: 25

@@ -1,0 +1,29 @@
+{
+  "summary": {
+    "seeds": 300,
+    "start": 5000,
+    "small": true,
+    "failing_seeds": [],
+    "passed": 300,
+    "wall_s": 58.8,
+    "mean_seed_s": 1.21,
+    "fault_totals": {
+      "crashes": 11009,
+      "crashes_mid_call": 2842,
+      "freezes": 5345,
+      "outages": 2534,
+      "dropped_requests": 1618,
+      "dropped_responses": 1323,
+      "duplicated": 865,
+      "signals": 600,
+      "approvals": 145,
+      "claims": 13369,
+      "appends": 36378,
+      "fencing_rejections": 397,
+      "seq_conflicts": 0,
+      "lease_expirations": 5438,
+      "timers_fired": 3274
+    }
+  },
+  "failures": []
+}
