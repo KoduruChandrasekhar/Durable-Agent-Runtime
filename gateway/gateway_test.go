@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"log/slog"
 	"os"
@@ -11,6 +12,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
+	"github.com/pressly/goose/v3/database"
+	"github.com/pressly/goose/v3/lock"
 
 	"github.com/keel-runtime/keel/gateway/breaker"
 	"github.com/keel-runtime/keel/gateway/budget"
@@ -192,6 +197,7 @@ func TestBudgetReserveThenSettleNeverOverspends(t *testing.T) {
 		t.Skip("KEEL_TEST_DATABASE_URL not set")
 	}
 	ctx := context.Background()
+	migrate(t, dsn) // packages test in any order; do not rely on the store tests creating the schema
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		t.Fatal(err)
@@ -277,3 +283,25 @@ func TestSemanticCacheNeverCrossesIdentifiers(t *testing.T) {
 }
 
 func strp(s string) *string { return &s }
+
+// migrate applies keel-server's migrations (the gateway shares its database).
+func migrate(t *testing.T, dsn string) {
+	t.Helper()
+	db, err := sql.Open("pgx", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	locker, err := lock.NewPostgresSessionLocker()
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := goose.NewProvider(database.DialectPostgres, db, os.DirFS("../server/internal/store/migrations"),
+		goose.WithSessionLocker(locker))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := p.Up(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}
